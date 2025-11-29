@@ -1,0 +1,83 @@
+-- Nome do Script: Bola_Indestrutivel_V3_Controle
+-- Local: LocalScript em StarterPlayerScripts
+
+local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Configuração da Bola
+local BALL_NAME = "SoccerVaisefdrblox123" -- Nome da peça da bola
+
+-- ❗ NOVAS TECLAS DE CONTROLE ❗
+local TOGGLE_KEY_KEYBOARD = Enum.KeyCode.E      -- Tecla E
+local TOGGLE_KEY_GAMEPAD = Enum.KeyCode.ButtonX  -- Botão Quadrado (PS) / Botão X (Xbox)
+
+-- Variáveis de Controle
+local isBallAttached = false
+local ballWeld = nil -- Variável para armazenar a conexão (WeldConstraint)
+
+local function findBall()
+    -- Procura a bola pelo nome no Workspace (garante que encontra mesmo após spawn/re-spawn)
+    for _, part in ipairs(workspace:GetDescendants()) do
+        if part:IsA("BasePart") and part.Name == BALL_NAME then
+            return part
+        end
+    end
+    return nil
+end
+
+local function toggleBallAttachment()
+    local Character = LocalPlayer.Character
+    if not Character then return end
+    
+    local HRP = Character:FindFirstChild("HumanoidRootPart")
+    if not HRP then return end
+
+    local TheBall = findBall()
+    if not TheBall then
+        print("Erro: Bola com o nome '" .. BALL_NAME .. "' não encontrada no jogo.")
+        return
+    end
+
+    if not isBallAttached then
+        -- === ATIVAR: Grudar a bola no jogador ===
+        
+        -- Cria a restrição de conexão (WeldConstraint)
+        ballWeld = Instance.new("WeldConstraint")
+        ballWeld.Part0 = HRP
+        ballWeld.Part1 = TheBall
+        ballWeld.Parent = TheBall -- Coloca o Weld dentro da bola
+        
+        -- Garante que a colisão esteja ativa para arrastar outros
+        TheBall.CanCollide = true 
+
+        isBallAttached = true
+        print("⚽ Bola grudadada (indisputável)! Pressione E/Quadrado para soltar.")
+        
+    else
+        -- === DESATIVAR: Soltar a bola ===
+        
+        -- Destrói a conexão (Weld)
+        if ballWeld and ballWeld.Parent then
+            ballWeld:Destroy()
+            ballWeld = nil
+        end
+        
+        isBallAttached = false
+        print("⚽ Bola solta. Pressione E/Quadrado para grudar novamente.")
+    end
+end
+
+local function handleInput(input, gameProcessedEvent)
+    -- Verifica se a tecla E OU o botão Quadrado (ButtonX) foi pressionado
+    local isTargetKey = (input.KeyCode == TOGGLE_KEY_KEYBOARD or input.KeyCode == TOGGLE_KEY_GAMEPAD)
+    
+    if isTargetKey and input.UserInputState == Enum.UserInputState.Begin and not gameProcessedEvent then
+        toggleBallAttachment()
+    end
+end
+
+-- Conecta a função ao evento de entrada do usuário
+UserInputService.InputBegan:Connect(handleInput)
+
+print("Script de Bola Indisputável (E/Quadrado) carregado. Pressione E ou Quadrado para começar.")
